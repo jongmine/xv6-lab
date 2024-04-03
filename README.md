@@ -22,7 +22,6 @@
 ~/xv6-lab/$ mkdir –p image/efi/boot
 
 # Copy bootloader
-
 ~/xv6-lab/$ cp Build/MyLoaderPkg/X64/DEBUG_GCC5/X64/loader.efi image/efi/boot/bootx64.efi
 
 # Copy kernel

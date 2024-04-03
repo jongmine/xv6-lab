@@ -11,7 +11,9 @@
 
 ### 🔨 build
 
-/xv6-lab/xv6/ $ `make kernelmemfs`
+``` shell
+/xv6-lab/xv6/ $ make kernelmemfs
+```
 
 ### 🚗 Run
 

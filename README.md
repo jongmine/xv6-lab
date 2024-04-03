@@ -12,36 +12,36 @@
 ### 🔨 build
 
 ``` shell
-/xv6-lab/xv6/ $ make kernelmemfs
+~/xv6-lab/xv6/$ make kernelmemfs
 ```
 
 ### 🚗 Run
 
 ```shell
 # Make directories: image/efi/boot/
-/xv6-lab/ $ mkdir –p image/efi/boot
+~/xv6-lab/$ mkdir –p image/efi/boot
 
 # Copy bootloader
 
-/xv6-lab/ $ cp Build/MyLoaderPkg/X64/DEBUG_GCC5/X64/loader.efi image/efi/boot/bootx64.efi
+~/xv6-lab/$ cp Build/MyLoaderPkg/X64/DEBUG_GCC5/X64/loader.efi image/efi/boot/bootx64.efi
 
 # Copy kernel
-/xv6-lab/ $ cp xv6/kernelmemfs image/kernel
+~/xv6-lab/$ cp xv6/kernelmemfs image/kernel
 
 # Run
-/xv6-lab/ $ ./run.sh
+~/xv6-lab/$ ./run.sh
 ```
 
 ### 🧑🏻‍🔧 Debug with GDB
 
 ```shell
-/xv6-lab/ $ dbgrun.sh
+~/xv6-lab/$ dbgrun.sh
 ```
 
-_In another terminal,_
+In another terminal,
 
 ``` shell
-/xv6-lab/xv6/ $ gdb kernelmemfs
+~/xv6-lab/xv6/$ gdb kernelmemfs
 
 (gdb) set archi i386:x86-64
 ...

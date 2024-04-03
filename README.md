@@ -15,30 +15,32 @@
 
 ### 🚗 Run
 
-#### Make directories: image/efi/boot/
+```shell
+# Make directories: image/efi/boot/
+/xv6-lab/ $ mkdir –p image/efi/boot
 
-/xv6-lab/ $ `mkdir –p image/efi/boot`
+# Copy bootloader
 
-#### Copy bootloader
+/xv6-lab/ $ cp Build/MyLoaderPkg/X64/DEBUG_GCC5/X64/loader.efi image/efi/boot/bootx64.efi
 
-/xv6-lab/ $ `cp Build/MyLoaderPkg/X64/DEBUG_GCC5/X64/loader.efi image/efi/boot/bootx64.efi`
+# Copy kernel
+/xv6-lab/ $ cp xv6/kernelmemfs image/kernel
 
-#### Copy kernel
-
-/xv6-lab/ $ `cp xv6/kernelmemfs image/kernel`
-
-#### Run
-
-/xv6-lab/ $ `./run.sh`
+# Run
+/xv6-lab/ $ ./run.sh
+```
 
 ### 🧑🏻‍🔧 Debug with GDB
 
-/xv6-lab/ $ `dbgrun.sh`
+```shell
+/xv6-lab/ $ dbgrun.sh
+```
 
 _In another terminal,_
 
-/xv6-lab/xv6/ $ `gdb kernelmemfs`
 ``` shell
+/xv6-lab/xv6/ $ gdb kernelmemfs
+
 (gdb) set archi i386:x86-64
 ...
 (gdb) target remote localhost:4321

@@ -34,7 +34,7 @@
 ### 🧑🏻‍🔧 Debug with GDB
 
 ```shell
-~/xv6-lab/$ dbgrun.sh
+~/xv6-lab/$ ./dbgrun.sh
 ```
 
 In another terminal,

@@ -386,6 +386,7 @@ wait2(int *status)
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
+        *status = p -> xstate;
         pid = p->pid;
         // 추가된 부
         if(status != NULL){

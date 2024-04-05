@@ -489,7 +489,7 @@ kill(int pid)
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
+    if(p->pid ㅇ== pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
@@ -577,8 +577,57 @@ exit2(int status)
     }
 
     // Jump into the scheduler, never to return.
-    curproc -> xstate = status;
+    curproc -> xstate = status; // 추가된 부분 exit된 프로세스의 상태값을 저장
     curproc->state = ZOMBIE;
     sched();
     panic("zombie exit");
+}
+
+int
+wait2(int *status)
+{
+    struct proc *p;
+    int havekids, pid;
+    struct proc *curproc = myproc();
+
+    acquire(&ptable.lock);
+    for(;;){
+        // Scan through table looking for exited children.
+        havekids = 0;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+            if(p->parent != curproc)
+                continue;
+            havekids = 1;
+            if(p->state == ZOMBIE){
+                // Found one.
+                pid = p->pid;
+                // 추가된 부
+                if(status != NULL){
+                    if(copyout(curproc -> pgdir, (uint) status, &(p -> xstate), sizeof(int)) < 0){
+                        release(&ptable.lock);
+                        return -1;
+                    }
+                }
+                kfree(p->kstack);
+                p->kstack = 0;
+                freevm(p->pgdir);
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                release(&ptable.lock);
+                return pid;
+            }
+        }
+
+        // No point waiting if we don't have any children.
+        if(!havekids || curproc->killed){
+            release(&ptable.lock);
+            return -1;
+        }
+
+        // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+        sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+    }
 }

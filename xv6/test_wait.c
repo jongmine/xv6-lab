@@ -1,3 +1,7 @@
+#include "syscall.h"
+#include "types.h"
+#include "user.h"
+
 int main(int argc, char *argv[])
 {
     int pid, child_pid;
@@ -8,7 +12,7 @@ int main(int argc, char *argv[])
     switch(pid)	{
         case -1:
             printf(2,"fork failed");
-            exit2(0);
+            exitt2(0);
         case 0:
             message = "This is the child";
             n = 5;
@@ -30,5 +34,5 @@ int main(int argc, char *argv[])
         printf(1, "Child has finished: PID = %d\n", child_pid);
         printf(1, "Child exited with code %d\n", status);
     }
-    exit(exit_code);
+    exit2(exit_code);
 }

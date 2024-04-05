@@ -25,7 +25,7 @@ sys_exit2(void)
 {
   int status;
 
-  if(argint(0, &pid) < 0)
+  if(argint(0, &status) < 0)
     return -1;
   exit2(status);
   return 0;

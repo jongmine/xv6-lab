@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     switch(pid)	{
         case -1:
             printf(2,"fork failed");
-            exitt2(0);
+            exit2(0);
         case 0:
             message = "This is the child";
             n = 5;

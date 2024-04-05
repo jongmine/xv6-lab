@@ -3,4 +3,4 @@ qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd \
 	-S -m 2048 -smp 4 \
 	-gdb tcp::4321 \
 	-serial mon:stdio \
-	-vga std 
+	-nographic

@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "debug.h"
+#include <stddef.h>
 
 struct {
   struct spinlock lock;
@@ -489,7 +490,7 @@ kill(int pid)
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid ㅇ== pid){
+    if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)

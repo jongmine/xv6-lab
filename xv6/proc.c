@@ -281,12 +281,12 @@ exit2(int status)
     struct proc *p;
     int fd;
 
-    if(curproc == initproc)
+    if (curproc == initproc)
         panic("init exiting");
 
     // Close all open files.
-    for(fd = 0; fd < NOFILE; fd++){
-        if(curproc->ofile[fd]){
+    for (fd = 0; fd < NOFILE; fd++) {
+        if (curproc->ofile[fd]) {
             fileclose(curproc->ofile[fd]);
             curproc->ofile[fd] = 0;
         }
@@ -303,16 +303,16 @@ exit2(int status)
     wakeup1(curproc->parent);
 
     // Pass abandoned children to init.
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->parent == curproc){
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->parent == curproc) {
             p->parent = initproc;
-            if(p->state == ZOMBIE)
+            if (p->state == ZOMBIE)
                 wakeup1(initproc);
         }
     }
 
     // Jump into the scheduler, never to return.
-    curproc -> xstate = status; // 추가된 부분 exit된 프로세스의 상태값을 저장
+    curproc->xstate = status; // 추가된 부분: exit된 프로세스의 상태값을 저장
     curproc->state = ZOMBIE;
     sched();
     panic("zombie exit");
@@ -370,20 +370,21 @@ wait2(int *status)
     struct proc *curproc = myproc();
 
     acquire(&ptable.lock);
-    for(;;){
+    for (;;) {
         // Scan through table looking for exited children.
         havekids = 0;
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->parent != curproc)
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->parent != curproc)
                 continue;
             havekids = 1;
-            if(p->state == ZOMBIE){
+            if (p->state == ZOMBIE) {
+                // 추가된 부분: 자식 프로세스의 상태값을 status 포인터가 가리키는 메모리에 저장
+                *status = p->xstate;
                 // Found one.
-                *status = p -> xstate;
                 pid = p->pid;
-                // 추가된 부
-                if(status != NULL){
-                    if(copyout(curproc -> pgdir, (uint) status, &(p -> xstate), sizeof(int)) < 0){
+                // 추가된 부분: copyout 함수를 통해 자식 프로세스의 상태값을 status에 복사
+                if (status != NULL) {
+                    if (copyout(curproc->pgdir, (uint) status, &(p->xstate), sizeof(int)) < 0) {
                         release(&ptable.lock);
                         return -1;
                     }
@@ -402,7 +403,7 @@ wait2(int *status)
         }
 
         // No point waiting if we don't have any children.
-        if(!havekids || curproc->killed){
+        if (!havekids || curproc->killed) {
             release(&ptable.lock);
             return -1;
         }

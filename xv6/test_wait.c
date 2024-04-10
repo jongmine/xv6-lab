@@ -8,9 +8,9 @@ int main(int argc, char *argv[])
     int n, status, exit_code;
 
     pid = fork();
-    switch(pid) {
+    switch (pid) {
         case -1:
-            printf(2,"fork failed");
+            printf(2, "fork failed");
             exit2(0);
         case 0:
             message = "This is the child";
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
             break;
     }
     if (pid == 0) {
-        for(; n > 0; n--) {
+        for (; n > 0; n--) {
             printf(1, "%s\n", message);
             sleep(1);
         }
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
     if (pid != 0) {
         child_pid = wait2(&status);
-        for(; n > 0; n--) {
+        for (; n > 0; n--) {
             printf(1, "%s\n", message);
             sleep(1);
         }

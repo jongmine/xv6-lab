@@ -108,3 +108,17 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_uthread_init(void)
+{
+    // 스레드 관리 자료구조 초기화
+    init_thread_system();
+
+    // 첫 번째 스레드 생성 및 초기화
+    thread_create(main_thread, (void*)main_function); // main_function은 사용자 프로그램의 메인 함수
+
+    // 스레드 스케줄링 시작
+    thread_schedule();
+    return 0;  // 성공 시 0 반환
+}

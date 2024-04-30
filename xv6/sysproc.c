@@ -110,7 +110,7 @@ sys_uptime(void)
 }
 
 int
-sys_uthread_init(void)
+sys_uthread_init(int)
 {
     // 스레드 관리 자료구조 초기화
     init_thread_system();

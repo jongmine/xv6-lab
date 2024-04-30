@@ -31,4 +31,5 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(exit2)
 SYSCALL(wait2)
+SYSCALL(uthread_init)
 

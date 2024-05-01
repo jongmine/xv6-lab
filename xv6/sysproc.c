@@ -41,8 +41,8 @@ int
 sys_wait2(void)
 {
   int *status;
-
-  if(argptr(0, (void*)&status, sizeof(*status)) < 0 )
+  
+  if(argptr(0, (void*)&status, sizeof(*status)) < 0)
     return -1;
   return wait2(status);
 }
@@ -96,6 +96,20 @@ sys_sleep(void)
   }
   release(&tickslock);
   return 0;
+}
+
+int
+sys_uthread_init(void)
+{
+  struct proc *p = myproc();
+  int func;
+  if (argint(0, &func) < 0)
+    return -1;
+  
+  if(p -> scheduler == 0)
+    p -> scheduler = (uint)func;
+  return 0;
+
 }
 
 // return how many clock tick interrupts have occurred

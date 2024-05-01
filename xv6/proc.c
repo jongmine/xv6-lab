@@ -40,7 +40,7 @@ struct cpu*
 mycpu(void)
 {
   int apicid, i;
-  
+
   if(readeflags()&FL_IF){
     panic("mycpu called with interrupts enabled\n");
   }
@@ -130,7 +130,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  
+
   initproc = p;
   if((p->pgdir = setupkvm()) == 0){
     panic("userinit: out of memory?");
@@ -326,7 +326,7 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-  
+
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
@@ -550,7 +550,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
+
   if(p == 0)
     panic("sleep");
 
@@ -668,14 +668,15 @@ procdump(void)
 int
 uthread_init(int address)
 {
-    struct proc *p = myproc();
+    struct proc *p;
 
-    // 주소가 유효한지 확인
-    if (address <= 0)
+    // 현재 프로세스를 가져옴
+    p = myproc();
+    if (p == 0)
         return -1;
 
     // 사용자 수준 스케줄러 주소 저장
-    p->scheduler = address;
+    p->scheduler = (void (*)(void))address;
 
     return 0;
 }

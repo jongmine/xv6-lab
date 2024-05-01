@@ -433,58 +433,26 @@ scheduler(void) {
 
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
-//    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-//      if(p->state != RUNNABLE)
-//        continue;
-//
-//      // Switch to chosen process.  It is the process's job
-//      // to release ptable.lock and then reacquire it
-//      // before jumping back to us.
-//      c->proc = p;
-//      switchuvm(p);
-//      p->state = RUNNING;
-//
-//      swtch(&(c->scheduler), p->context);
-//      switchkvm();
-//
-//      // Process is done running for now.
-//      // It should have changed its p->state before coming back.
-//      c->proc = 0;
-//    }
-//    release(&ptable.lock);
-//
-//  }
-        for (;;) {
-            // Enable interrupts on this processor.
-            sti();
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
 
-            // Loop over process table looking for process to run.
-            acquire(&ptable.lock);
-            for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                if (p->state != RUNNABLE)
-                    continue;
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
 
-                // Call user-level scheduler if it is set
-                if (p->scheduler != 0) {
-                    void (*scheduler)(void) = (void (*)(void)) p->scheduler;
-                    scheduler();
-                }
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
 
-                // Switch to chosen process.
-                c->proc = p;
-                switchuvm(p);
-                p->state = RUNNING;
-
-                swtch(&(c->scheduler), p->context);
-                switchkvm();
-
-                // Process is done running for now.
-                // It should have changed its p->state before coming back.
-                c->proc = 0;
-            }
-            release(&ptable.lock);
-        }
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
     }
+    release(&ptable.lock);
+  }
 }
 
 // Enter scheduler.  Must hold only ptable.lock

@@ -54,6 +54,12 @@ trap(struct trapframe *tf)
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
+
+      struct proc *curproc = myproc();
+      if (curproc && curproc->scheduler && (tf->cs & 3) == DPL_USER) {
+          // 사용자 수준 스케줄러를 호출
+          ((void (*)(void)) curproc->scheduler)();
+        }
     }
     lapiceoi();
     break;
@@ -81,18 +87,8 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
-      case T_IRQ0 + IRQ_TIMER:
-          if(cpuid() == 0){
-              acquire(&tickslock);
-              ticks++;
-              wakeup(&ticks);
-              release(&tickslock);
-              (*(void(*)(void))myproc()->scheduler)();
-          }
-          lapiceoi();
-          break;
 
-          //PAGEBREAK: 13
+  //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
       // In kernel, it must be our mistake.

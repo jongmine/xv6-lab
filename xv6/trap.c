@@ -54,14 +54,19 @@ trap(struct trapframe *tf)
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
-
-      struct proc *curproc = myproc();
-      if (curproc && curproc->scheduler && (tf->cs & 3) == DPL_USER) {
-          // 사용자 수준 스케줄러를 호출
-          ((void (*)(void)) curproc->scheduler)();
-        }
     }
     lapiceoi();
+
+    if (myproc() && (tf->cs & 3) == DPL_USER) {
+      struct proc *p = myproc();
+        uint scheduler_addr = p->scheduler;
+        if (scheduler_addr != 0) {
+          // 사용자 수준 스레드 스케줄러 호출
+          void (*scheduler)(void) = (void (*)(void))scheduler_addr;
+          scheduler();
+      }
+    }
+
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();

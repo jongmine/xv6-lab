@@ -666,8 +666,16 @@ procdump(void)
 }
 
 int
-uthread_init(int address) // address of the user-level scheduler
+uthread_init(int address)
 {
-    myproc()->scheduler = address;
+    struct proc *p = myproc();
+
+    // 주소가 유효한지 확인
+    if (address <= 0)
+        return -1;
+
+    // 사용자 수준 스케줄러 주소 저장
+    p->scheduler = address;
+
     return 0;
 }

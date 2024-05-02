@@ -57,13 +57,10 @@ trap(struct trapframe *tf)
     }
 
     lapiceoi();
-    if(myproc() != 0){
-      if (myproc()->scheduler != 0) {
-        void (*schedul)(void) = (void (*)(void))myproc()->scheduler;
-        myproc() -> state = "RUNNABLE"
-        cprintf("proc -> %s", myproc() -> state);
-        schedul();
-      }
+    struct proc *p = myproc();
+    if (p != 0 && p -> scheduler != 0) {
+      // 스케줄러 함수 포인터를 다음 실행 함수로 설정합니다.
+      p->tf->eip = (uint) p->scheduler;
     }
     break;
   case T_IRQ0 + IRQ_IDE:

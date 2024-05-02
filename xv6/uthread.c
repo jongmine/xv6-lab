@@ -69,6 +69,13 @@ thread_schedule(void)
 }
 
 void 
+thread_yield(void)
+{
+  current_thread->state = RUNNABLE;
+  thread_schedule();
+}
+
+void
 thread_init(void)
 {
   // main() is thread 0, which will make the first invocation to
@@ -78,24 +85,17 @@ thread_init(void)
   // a RUNNABLE thread.
   current_thread = &all_thread[0];
   current_thread->state = RUNNING;
-  uthread_init(thread_schedule);
+  uthread_init(thread_yield);
 }
 
-void 
-thread_yield(void)
-{
-  current_thread->state = RUNNABLE;
-  thread_schedule();
-}
-
-static void 
+static void
 mythread(void)
 {
   int i;
   printf(1, "my thread running\n");
   for (i = 0; i < 100; i++) {
     printf(1, "my thread 0x%x\n", (int) current_thread);
-    //thread_yield();
+    // thread_yield();
   }
   printf(1, "my thread: exit\n");
   current_thread->state = FREE;

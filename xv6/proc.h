@@ -49,7 +49,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int xstate;
+  int xstate;				           // Add exit status in PCB
   uint scheduler;              // address of the user-level scheduler
 };
 

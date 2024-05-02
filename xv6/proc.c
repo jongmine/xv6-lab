@@ -40,7 +40,7 @@ struct cpu*
 mycpu(void)
 {
   int apicid, i;
-
+  
   if(readeflags()&FL_IF){
     panic("mycpu called with interrupts enabled\n");
   }
@@ -130,7 +130,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-
+  
   initproc = p;
   if((p->pgdir = setupkvm()) == 0){
     panic("userinit: out of memory?");
@@ -277,45 +277,45 @@ exit(void)
 void
 exit2(int status)
 {
-    struct proc *curproc = myproc();
-    struct proc *p;
-    int fd;
+  struct proc *curproc = myproc();
+  struct proc *p;
+  int fd;
 
-    if (curproc == initproc)
-        panic("init exiting");
+  if(curproc == initproc)
+    panic("init exiting");
 
-    // Close all open files.
-    for (fd = 0; fd < NOFILE; fd++) {
-        if (curproc->ofile[fd]) {
-            fileclose(curproc->ofile[fd]);
-            curproc->ofile[fd] = 0;
-        }
+  // Close all open files.
+  for(fd = 0; fd < NOFILE; fd++){
+    if(curproc->ofile[fd]){
+      fileclose(curproc->ofile[fd]);
+      curproc->ofile[fd] = 0;
     }
+  }
 
-    begin_op();
-    iput(curproc->cwd);
-    end_op();
-    curproc->cwd = 0;
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
+  curproc->cwd = 0;
 
-    acquire(&ptable.lock);
+  acquire(&ptable.lock);
 
-    // Parent might be sleeping in wait().
-    wakeup1(curproc->parent);
+  // Parent might be sleeping in wait().
+  wakeup1(curproc->parent);
 
-    // Pass abandoned children to init.
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->parent == curproc) {
-            p->parent = initproc;
-            if (p->state == ZOMBIE)
-                wakeup1(initproc);
-        }
+  // Pass abandoned children to init.
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->parent == curproc){
+      p->parent = initproc;
+      if(p->state == ZOMBIE)
+        wakeup1(initproc);
     }
+  }
 
-    // Jump into the scheduler, never to return.
-    curproc->xstate = status; // 추가된 부분: exit된 프로세스의 상태값을 저장
-    curproc->state = ZOMBIE;
-    sched();
-    panic("zombie exit");
+  // Jump into the scheduler, never to return.
+  curproc -> xstate = status; // exit된 프로세스의 상태값을 저장한다
+  curproc->state = ZOMBIE;
+  sched();
+  panic("zombie exit");
 }
 
 // Wait for a child process to exit and return its pid.
@@ -326,7 +326,7 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-
+  
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
@@ -365,52 +365,50 @@ wait(void)
 int
 wait2(int *status)
 {
-    struct proc *p;
-    int havekids, pid;
-    struct proc *curproc = myproc();
-
-    acquire(&ptable.lock);
-    for (;;) {
-        // Scan through table looking for exited children.
-        havekids = 0;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->parent != curproc)
-                continue;
-            havekids = 1;
-            if (p->state == ZOMBIE) {
-                // 추가된 부분: 자식 프로세스의 상태값을 status 포인터가 가리키는 메모리에 저장
-                *status = p->xstate;
-                // Found one.
-                pid = p->pid;
-                // 추가된 부분: copyout 함수를 통해 자식 프로세스의 상태값을 status에 복사
-                if (status != NULL) {
-                    if (copyout(curproc->pgdir, (uint) status, &(p->xstate), sizeof(int)) < 0) {
-                        release(&ptable.lock);
-                        return -1;
-                    }
-                }
-                kfree(p->kstack);
-                p->kstack = 0;
-                freevm(p->pgdir);
-                p->pid = 0;
-                p->parent = 0;
-                p->name[0] = 0;
-                p->killed = 0;
-                p->state = UNUSED;
-                release(&ptable.lock);
-                return pid;
-            }
-        }
-
-        // No point waiting if we don't have any children.
-        if (!havekids || curproc->killed) {
+  struct proc *p;
+  int havekids, pid;
+  struct proc *curproc = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != curproc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        *status = p -> xstate;
+        pid = p->pid;
+        if(status != NULL){
+          if(copyout(curproc -> pgdir, (uint) status, &(p -> xstate), sizeof(int)) < 0){
             release(&ptable.lock);
             return -1;
+          }
         }
-
-        // Wait for children to exit.  (See wakeup1 call in proc_exit.)
-        sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        release(&ptable.lock);
+        return pid;
+      }
     }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+  }
 }
 
 //PAGEBREAK: 42
@@ -422,17 +420,18 @@ wait2(int *status)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 void
-scheduler(void) {
-    struct proc *p;
-    struct cpu *c = mycpu();
-    c->proc = 0;
+scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+  
+  for(;;){
+    // Enable interrupts on this processor.
+    sti();
 
-    for (;;) {
-        // Enable interrupts on this processor.
-        sti();
-
-        // Loop over process table looking for process to run.
-        acquire(&ptable.lock);
+    // Loop over process table looking for process to run.
+    acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -440,18 +439,21 @@ scheduler(void) {
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-
+      
       swtch(&(c->scheduler), p->context);
       switchkvm();
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
+      
       c->proc = 0;
     }
     release(&ptable.lock);
+
   }
 }
 
@@ -518,7 +520,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-
+  
   if(p == 0)
     panic("sleep");
 
@@ -596,6 +598,8 @@ kill(int pid)
   return -1;
 }
 
+int uthread_init(int address); 
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
@@ -631,20 +635,4 @@ procdump(void)
     }
     cprintf("\n");
   }
-}
-
-int
-uthread_init(int address)
-{
-    struct proc *p;
-
-    // 현재 프로세스를 가져옴
-    p = myproc();
-    if (p == 0)
-        return -1;
-
-    // 사용자 수준 스케줄러 주소 저장
-    p->scheduler = (void (*)(void))address;
-
-    return 0;
 }

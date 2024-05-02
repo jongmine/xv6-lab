@@ -1,7 +1,6 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include <stddef.h>
 
 /* Possible states of a thread; */
 #define FREE        0x0
@@ -24,31 +23,27 @@ thread_p  current_thread;
 thread_p  next_thread;
 extern void thread_switch(void);
 
-void
-thread_init(void)
-{
-  // main() is thread 0, which will make the first invocation to
-  // thread_schedule().  it needs a stack so that the first thread_switch() can
-  // save thread 0's state.  thread_schedule() won't run the main thread ever
-  // again, because its state is set to RUNNING, and thread_schedule() selects
-  // a RUNNABLE thread.
-  int i;
-  for (i = 0; i < MAX_THREAD; i++) {
-      all_thread[i].state = FREE;
-  }
-
-  current_thread = &all_thread[0];
-  current_thread->state = RUNNING;
-  uthread_init(thread_schedule);
-}
-
-static void
-thread_schedule(void)
+void 
+thread_create(void (*func)())
 {
   thread_p t;
 
+  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
+    if (t->state == FREE) break;
+  }
+  t->sp = (int) (t->stack + STACK_SIZE);   // set sp to the top of the stack
+  t->sp -= 4;                              // space for return address
+  * (int *) (t->sp) = (int)func;           // push return address on stack
+  t->sp -= 32;                             // space for registers that thread_switch expects
+  t->state = RUNNABLE;
+}
+
+static void 
+thread_schedule(void)
+{
+  thread_p t;
   /* Find another runnable thread. */
-  next_thread = NULL;
+  next_thread = 0;
   for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
     if (t->state == RUNNABLE && t != current_thread) {
       next_thread = t;
@@ -61,7 +56,7 @@ thread_schedule(void)
     next_thread = current_thread;
   }
 
-  if (next_thread == NULL) {
+  if (next_thread == 0) {
     printf(2, "thread_schedule: no runnable threads\n");
     exit();
   }
@@ -70,43 +65,37 @@ thread_schedule(void)
     next_thread->state = RUNNING;
     thread_switch();
   } else
-    next_thread = NULL;
+    next_thread = 0;
 }
 
-void
-thread_create(void (*func)())
+void 
+thread_init(void)
 {
-  thread_p t;
-
-  for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
-    if (t->state == FREE) break;
-  }
-  if (t>= all_thread + MAX_THREAD) {
-      printf(2, "thread_create: no available thread slots\n");
-      return;
-  }
-  t->sp = (int) (t->stack + STACK_SIZE);   // set sp to the top of the stack
-  t->sp -= 4;                              // space for return address
-  * (int *) (t->sp) = (int)func;           // push return address on stack
-  t->sp -= 32;                             // space for registers that thread_switch expects
-  t->state = RUNNABLE;
+  // main() is thread 0, which will make the first invocation to
+  // thread_schedule().  it needs a stack so that the first thread_switch() can
+  // save thread 0's state.  thread_schedule() won't run the main thread ever
+  // again, because its state is set to RUNNING, and thread_schedule() selects
+  // a RUNNABLE thread.
+  current_thread = &all_thread[0];
+  current_thread->state = RUNNING;
+  uthread_init(thread_schedule);
 }
 
-void
+void 
 thread_yield(void)
 {
   current_thread->state = RUNNABLE;
   thread_schedule();
 }
 
-static void
+static void 
 mythread(void)
 {
   int i;
   printf(1, "my thread running\n");
   for (i = 0; i < 100; i++) {
     printf(1, "my thread 0x%x\n", (int) current_thread);
-//    thread_yield();
+    //thread_yield();
   }
   printf(1, "my thread: exit\n");
   current_thread->state = FREE;
@@ -114,8 +103,8 @@ mythread(void)
 }
 
 
-int
-main(int argc, char *argv[])
+int 
+main(int argc, char *argv[]) 
 {
   thread_init();
   thread_create(mythread);

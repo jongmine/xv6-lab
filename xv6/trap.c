@@ -55,18 +55,16 @@ trap(struct trapframe *tf)
       wakeup(&ticks);
       release(&tickslock);
     }
-    lapiceoi();
 
-    if (myproc() && (tf->cs & 3) == DPL_USER) {
-      struct proc *p = myproc();
-        uint scheduler_addr = p->scheduler;
-        if (scheduler_addr != 0) {
-          // 사용자 수준 스레드 스케줄러 호출
-          void (*scheduler)(void) = (void (*)(void))scheduler_addr;
-          scheduler();
+    lapiceoi();
+    if(myproc() != 0){
+      if (myproc()->scheduler != 0) {
+        void (*schedul)(void) = (void (*)(void))myproc()->scheduler;
+        myproc() -> state = "RUNNABLE"
+        cprintf("proc -> %s", myproc() -> state);
+        schedul();
       }
     }
-
     break;
   case T_IRQ0 + IRQ_IDE:
     ideintr();

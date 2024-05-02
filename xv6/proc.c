@@ -598,22 +598,7 @@ kill(int pid)
   return -1;
 }
 
-int
-uthread_init(int address)
-{
-    struct proc *curproc = myproc();
-
-    // Check if the current process already has a user-level scheduler registered
-    if (curproc->scheduler != 0) {
-        // User-level scheduler already registered, return an error
-        return -1;
-    }
-
-    // Set the user-level scheduler function address for the current process
-    curproc->scheduler = (uint)address;
-
-    return 0; // Success
-}
+int uthread_init(int address); 
 
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.

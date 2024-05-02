@@ -75,7 +75,7 @@ thread_yield(void)
   thread_schedule();
 }
 
-void
+void 
 thread_init(void)
 {
   // main() is thread 0, which will make the first invocation to
@@ -88,7 +88,7 @@ thread_init(void)
   uthread_init(thread_yield);
 }
 
-static void
+static void 
 mythread(void)
 {
   int i;

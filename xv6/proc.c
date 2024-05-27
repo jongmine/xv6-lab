@@ -638,17 +638,27 @@ procdump(void)
 int
 printpt(int pid)
 {
-    struct proc *p;
+    struct proc *p = 0;
     pde_t *pgdir;
     pte_t *pte;
     uint va;
+    int found = 0;
 
+    // 프로세스 테이블에서 해당 pid의 프로세스를 찾기
+    acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->pid == pid)
+        if (p->pid == pid) {
+            found = 1;
             break;
+        }
     }
-    if (p == &ptable.proc[NPROC] || p->state == UNUSED)
+    release(&ptable.lock);
+
+    // 해당 프로세스가 존재하지 않거나, UNUSED 상태일 경우 -1 반환
+    if (!found || p->state == UNUSED) {
+        cprintf("Process with pid %d not found or is in UNUSED state\n", pid);
         return -1;
+    }
 
     pgdir = p->pgdir;
 
@@ -656,7 +666,7 @@ printpt(int pid)
     for (va = 0; va < KERNBASE; va += PGSIZE) {
         pte = walkpgdir(pgdir, (void *) va, 0);
         if (pte && (*pte & PTE_P)) {
-            cprintf("%x P %c %c %x\n",
+            cprintf("VA: 0x%x P %c %c PA: 0x%x\n",
                     va,
                     (*pte & PTE_U) ? 'U' : 'K',
                     (*pte & PTE_W) ? 'W' : '-',

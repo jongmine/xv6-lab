@@ -63,7 +63,7 @@ exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sp = KERNBASE;
-  sp = (char*) PGROUNDDOWN((uint) sp - PGSIZE);
+  sp = PGROUNDDOWN((uint) sp - PGSIZE);
     if ((sp = allocuvm(pgdir, sp - 2 * PGSIZE, sp)) == 0)
       goto bad;
     clearpteu(pgdir, (char *)(sp - 2 * PGSIZE));
@@ -82,31 +82,26 @@ exec(char *path, char **argv)
     if(argc >= MAXARG)
       goto bad;
   sp -= strlen(argv[argc]) + 1;
-  sp -= (uint)sp % 4;
+  sp -= sp % 4;
 //    sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
-    if (copyout(pgdir, (uint)sp, ustack, (3+argc+1)*4) < 0)
+    if (copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
       goto bad;
-    ustack[3+argc] = (uint)sp;
   /*
     if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
       goto bad;
-    ustack[3+argc] = sp;
   */
+    ustack[3+argc] = sp;
   }
   ustack[3+argc] = 0;
 
   ustack[0] = 0xffffffff;  // fake return PC
   ustack[1] = argc;
-  ustack[2] = (uint)sp - (argc+1)*4;  // argv pointer
+  ustack[2] = sp - (argc+1)*4;  // argv pointer
 //  ustack[2] = sp - (argc+1)*4;  // argv pointer
 
   sp -= (3+argc+1) * 4;
-  if(copyout(pgdir, (uint)sp, ustack, (3+argc+1)*4) < 0)
-    goto bad;
-  /*
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;
-  */
 
   // Save program name for debugging.
   for(last=s=path; *s; s++)
@@ -119,8 +114,7 @@ exec(char *path, char **argv)
   curproc->pgdir = pgdir;
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
-  curproc->tf->esp = (uint)sp;
-//  curproc->tf->esp = sp;
+  curproc->tf->esp = sp;
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;

@@ -186,6 +186,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_test_wait\
+	_recurse\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

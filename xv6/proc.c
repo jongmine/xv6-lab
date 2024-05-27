@@ -634,3 +634,36 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int
+printpt(int pid)
+{
+    struct proc *p;
+    pde_t *pgdir;
+    pte_t *pte;
+    uint i, va;
+
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->pid == pid)
+            break;
+    }
+    if (p == &ptable.proc[NPROC] || p->state == UNUSED)
+        return -1;
+
+    pgdir = p->pgdir;
+
+    cprintf("START PAGE TABLE (pid %d)\n", pid);
+    for (va = 0; va < KERNBASE; va += PGSIZE) {
+        pte = walkpgdir(pgdir, (void *) va, 0);
+        if (pte && (*pte & PTE_P)) {
+            cprintf("%x P %c %c %x\n",
+                    va / PGSIZE,
+                    (*pte & PTE_U) ? 'U' : 'K',
+                    (*pte & PTE_W) ? 'W' : '-',
+                    PTE_ADDR(*pte) >> 12);
+        }
+    }
+    cprintf("END PAGE TABLE\n");
+    return 0;
+}
+

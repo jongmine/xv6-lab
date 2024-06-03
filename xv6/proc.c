@@ -670,8 +670,8 @@ printpt(int pid)
         if (pte && (*pte & PTE_P)) {
             cprintf("%x P %s %s %x\n",
                     (va >> 12),
-                    (*pte & PTE_U) ? 'U' : 'K',
-                    (*pte & PTE_W) ? 'W' : '-',
+                    (*pte & PTE_U) ? "U" : "K",
+                    (*pte & PTE_W) ? "W" : "-",
                     PTE_ADDR(*pte));
         }
     }

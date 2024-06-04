@@ -654,11 +654,10 @@ printpt(int pid)
             break;
         }
     }
-    release(&ptable.lock);
-
     // 해당 프로세스가 존재하지 않거나, UNUSED 상태일 경우 -1 반환
     if (!found || p->state == UNUSED) {
         cprintf("Process with pid %d not found or is in UNUSED state\n", pid);
+        release(&ptable.lock);
         return -1;
     }
 
@@ -676,6 +675,7 @@ printpt(int pid)
         }
     }
     cprintf("END PAGE TABLE\n");
+    release(&ptable.lock);
     return 0;
 }
 

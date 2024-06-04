@@ -66,7 +66,7 @@ argptr(int n, char **pp, int size)
  
   if(argint(n, &i) < 0)
     return -1;
-  if(size < 0 || (uint)i >= (KERNEL_TOP) || (uint)i+size > (KERNEL_TOP)
+  if(size < 0 || (uint)i >= (KERNEL_TOP) || (uint)i+size > (KERNEL_TOP))
     return -1;
   *pp = (char*)i;
   return 0;

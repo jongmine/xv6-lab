@@ -640,42 +640,43 @@ pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int
 printpt(int pid)
 {
-    struct proc *p;
+    {
+        struct proc* p = getproc(pid);
+        if(p == 0) return -1;
+        uint size = p->sz / PGSIZE; // total pages
 
-    acquire(&ptable.lock);
+        for(uint i = 0; i <= size; i++)
+        {
+            pte_t* pgtab;
+            void* va = (void*) PGADDR(i, 0, 0);
+            pde_t* pde = &p->pgdir[PDX(va)];
 
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-        if(p->pid == pid) goto found;
+            if(*pde & PTE_P)
+            {
+                cprintf("START PAGE TABLE (pid %d)\n", pid);
 
-    // pid_not_present
-    release(&ptable.lock);
-    return -1;
+                pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
 
-    found:
-    release(&ptable.lock);
-
-
-    cprintf("START PAGE TABLE (pid %d)\n", pid);
-
-    // vpn present writable usermode ppn
-
-    for(uint v = 0; v < PGROUNDUP(p->sz); v += PGSIZE) {
-        pte_t* pte = walkpgdir(p->pgdir, (char*) v, 0);
-
-        if(!(*pte & PTE_P)) {
-            cprintf("%x - - - - \n", (v / PGSIZE));
-            continue;
+                for(uint j = 0; j < NPTENTRIES; j++)
+                {
+                    void* va_entry = (void*) PGADDR(i, j, 0);
+                    pte_t* pte = &pgtab[PTX(va_entry)];
+                    if(pte > 0)
+                    {
+                        if (*pte & PTE_P)
+                        {
+                            cprintf("%x P %s %s %x\n",
+                                    j,
+                                    *pte & PTE_U ? "U" : "-",
+                                    *pte & PTE_W ? "W" : "-",
+                                    PTE_ADDR(*pte) >> PTXSHIFT);
+                        }
+                    }
+                }
+                cprintf("END PAGE TABLE\n");
+            }
         }
 
-        cprintf("%x %s %s %s %x \n", (v / PGSIZE)
-                , "P"
-                , *pte & PTE_W ? "W" : "-"
-                , *pte & PTE_U ? "U" : "-"
-                , PTE_ADDR(*pte));
-    }
-
-    cprintf("END PAGE TABLE; sz = %d\n", p->sz);
-
-    return 0;
+        return 0;
 }
 

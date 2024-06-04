@@ -640,43 +640,28 @@ pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int
 printpt(int pid)
 {
-    {
-        struct proc* p = getproc(pid);
-        if(p == 0) return -1;
-        uint size = p->sz / PGSIZE; // total pages
-
-        for(uint i = 0; i <= size; i++)
-        {
-            pte_t* pgtab;
-            void* va = (void*) PGADDR(i, 0, 0);
-            pde_t* pde = &p->pgdir[PDX(va)];
-
-            if(*pde & PTE_P)
-            {
-                cprintf("START PAGE TABLE (pid %d)\n", pid);
-
-                pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-
-                for(uint j = 0; j < NPTENTRIES; j++)
-                {
-                    void* va_entry = (void*) PGADDR(i, j, 0);
-                    pte_t* pte = &pgtab[PTX(va_entry)];
-                    if(pte > 0)
-                    {
-                        if (*pte & PTE_P)
-                        {
-                            cprintf("%x P %s %s %x\n",
-                                    j,
-                                    *pte & PTE_U ? "U" : "-",
-                                    *pte & PTE_W ? "W" : "-",
-                                    PTE_ADDR(*pte) >> PTXSHIFT);
-                        }
-                    }
+    //need to get last level page table and print it
+    struct proc *p;
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->pid == pid){
+            cprintf("START PAGE TABLE (pid %d)\n", pid);
+            for (uint address = 0; address < p->sz; address += PGSIZE) {
+                pte_t *pte = walkpgdir(p->pgdir, (void *)address, 0);
+                if (*pte & PTE_P) {
+                    cprintf("%x P %s %s %x\n", (address >> 12),
+                            *pte & PTE_U ? "U" : "-",
+                            *pte & PTE_W ? "W" : "-",
+                            PTE_ADDR(*pte) >> PTXSHIFT);
+                } else {
+                    cprintf("--------\n");
                 }
-                cprintf("END PAGE TABLE\n");
             }
+            cprintf("END PAGE TABLE\n");
         }
-
-        return 0;
+    }
+    // if there is no pid that matches just return 0 (failure essentially)
+    release(&ptable.lock);
+    return 0;
 }
 

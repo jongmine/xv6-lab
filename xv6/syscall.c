@@ -20,7 +20,7 @@ fetchint(uint addr, int *ip)
 //  struct proc *curproc = myproc();
 
 //  if(addr >= curproc->sz || addr+4 > curproc->sz)
-  if(addr >= TOPBASE || addr+4 > TOPBASE)
+  if(addr >= KERNEL_TOP || addr+4 > KERNEL_TOP)
     return -1;
   *ip = *(int*)(addr);
   return 0;
@@ -36,11 +36,11 @@ fetchstr(uint addr, char **pp)
 //  struct proc *curproc = myproc();
 
 //  if(addr >= curproc->sz)
-  if(addr >= TOPBASE)
+  if(addr >= KERNEL_TOP)
     return -1;
   *pp = (char*)addr;
 //  ep = (char*)curproc->sz;
-  ep = (char*)(TOPBASE);
+  ep = (char*)(KERNEL_TOP);
   for(s = *pp; s < ep; s++){
     if(*s == 0)
       return s - *pp;
@@ -66,8 +66,7 @@ argptr(int n, char **pp, int size)
  
   if(argint(n, &i) < 0)
     return -1;
-//  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
-  if(size < 0 || (uint)i >= (TOPBASE) || (uint)i+size > (TOPBASE))
+  if(size < 0 || (uint)i >= (KERNEL_TOP) || (uint)i+size > (KERNEL_TOP)
     return -1;
   *pp = (char*)i;
   return 0;

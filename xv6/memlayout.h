@@ -9,7 +9,7 @@
 #define KERNBASE 0x80000000         // First kernel virtual address
 //#define KERNBASE 0x0000000         // First kernel virtual address
 #define KERNLINK (KERNBASE+EXTMEM)  // Address where kernel is linked
-#define TOPBASE (KERNBASE - 1)
+#define KERNEL_TOP (KERNBASE - 1)
 
 #define PCI_BAR_BASE 0x80000000
 #define PCI_VP_OFFSET 0x40000000

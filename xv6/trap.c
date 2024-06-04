@@ -83,17 +83,17 @@ trap(struct trapframe *tf)
     break;
   case T_PGFLT:
     uint f = rcr2();
-    if (f > TOPBASE) {
-      cprintf("from trap access > KERNELBASE");
+    if (f > KERNEL_TOP) {
+      cprintf("Page fault above KERNELBASE at address: %p\n", f);
       exit();
     }
     f = PGROUNDDOWN(f);
     if (allocuvm(myproc()->pgdir, f, f + PGSIZE) == 0) {
-      cprintf("case T_PGFLT from trap.c: allocuvm failed. Number of current allocated pages: %d\n", myproc()->stack_alloc);
+      cprintf("Page allocation failed. Allocated pages: %d\n", myproc()->stack_allocated);
       exit();
     }
-    myproc()->stack_alloc++;
-    cprintf("case T_PGFLT from trap.c: allocuvm succeeded. Number of pages allocated: %d\n", myproc()->stack_alloc);
+    myproc()->stack_allocated++;
+    cprintf("Page allocation succeeded. Total pages: %d\n", myproc()->stack_allocated);
     break;
 
   //PAGEBREAK: 13

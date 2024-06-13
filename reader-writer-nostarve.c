@@ -8,27 +8,62 @@
 //
 
 typedef struct __rwlock_t {
+    sem_t lock;           // Lock to protect access to the reader count
+    sem_t writelock;      // Lock to ensure writers have exclusive access
+    int readers;          // Count of active readers
+    int waiting_writers;  // Count of waiting writers
+    int waiting_readers;  // Count of waiting readers
 } rwlock_t;
 
 
 void rwlock_init(rwlock_t *rw) {
+    rw->readers = 0;
+    rw->waiting_writers = 0;
+    rw->waiting_readers = 0;
+    sem_init(&rw->lock, 0, 1);
+    sem_init(&rw->writelock, 0, 1);
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
+    sem_wait(&rw->lock);
+    if (rw->waiting_writers > 0) {
+        rw->waiting_readers++;
+        sem_post(&rw->lock);
+        // Readers wait if there are waiting writers to prevent writer starvation
+        sem_wait(&rw->writelock);
+        sem_post(&rw->writelock);
+        sem_wait(&rw->lock);
+        rw->waiting_readers--;
+    }
+    rw->readers++;
+    if (rw->readers == 1)
+        sem_wait(&rw->writelock);
+    sem_post(&rw->lock);
 }
 
 void rwlock_release_readlock(rwlock_t *rw) {
+    sem_wait(&rw->lock);
+    rw->readers--;
+    if (rw->readers == 0)
+        sem_post(&rw->writelock);
+    sem_post(&rw->lock);
 }
 
 void rwlock_acquire_writelock(rwlock_t *rw) {
+    sem_wait(&rw->lock);
+    rw->waiting_writers++;
+    sem_post(&rw->lock);
+    sem_wait(&rw->writelock);
 }
 
 void rwlock_release_writelock(rwlock_t *rw) {
+    rw->waiting_writers--;
+    sem_post(&rw->writelock);
 }
 
 //
 // Don't change the code below (just use it!)
-// 
+//
 
 int loops;
 int value = 0;

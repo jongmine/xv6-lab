@@ -8,10 +8,10 @@
 //
 
 typedef struct __rwlock_t {
-    sem_t *lock;
-    sem_t *writelock;
-    sem_t *readlock;
-    int readers;
+    sem_t lock;           // binary semaphore for basic lock
+    sem_t writelock;      // to allow ONE writer/MANY readers
+    int readers;          // number of readers in the critical section
+    int waiting_writers;  // number of writers waiting for the lock
 } rwlock_t;
 
 void rwlock_init(rwlock_t *rw) {

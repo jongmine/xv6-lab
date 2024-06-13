@@ -8,59 +8,57 @@
 //
 
 typedef struct __rwlock_t {
-    sem_t lock;        // 기본 잠금 (binary semaphore)
-    sem_t writelock;   // 쓰기 잠금, 하나의 작가만 가능
-    sem_t no_writer;   // 작가 대기 중일 때 새로운 독자 차단
-    int readers;       // 현재 읽기 중인 독자 수
-    int writers_waiting; // 대기 중인 작가 수
+    sem_t *lock;
+    sem_t *writelock;
+    sem_t *readlock;
+    int readers;
 } rwlock_t;
 
 void rwlock_init(rwlock_t *rw) {
     rw->readers = 0;
-    rw->writers_waiting = 0;
+    rw->waiting_writers = 0;
     sem_init(&rw->lock, 0, 1);
     sem_init(&rw->writelock, 0, 1);
-    sem_init(&rw->no_writer, 0, 1);
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
-    sem_wait(&rw->no_writer); // 작가가 대기 중일 경우 새로운 독자 차단
     sem_wait(&rw->lock);
+    while (rw->waiting_writers > 0) {
+        // If there are writers waiting, release the lock and wait
+        sem_post(&rw->lock);
+        usleep(100);  // sleep for a short while to avoid busy waiting
+        sem_wait(&rw->lock);
+    }
     rw->readers++;
     if (rw->readers == 1) {
-        sem_wait(&rw->writelock); // 첫 번째 독자가 쓰기 잠금 획득
+        sem_wait(&rw->writelock);
     }
     sem_post(&rw->lock);
-    sem_post(&rw->no_writer); // 작가가 대기 중이 아니면 새로운 독자 허용
 }
 
 void rwlock_release_readlock(rwlock_t *rw) {
     sem_wait(&rw->lock);
     rw->readers--;
     if (rw->readers == 0) {
-        sem_post(&rw->writelock); // 마지막 독자가 쓰기 잠금을 해제
+        sem_post(&rw->writelock);
     }
     sem_post(&rw->lock);
 }
 
 void rwlock_acquire_writelock(rwlock_t *rw) {
     sem_wait(&rw->lock);
-    rw->writers_waiting++; // 대기 중인 작가 수 증가
-    if (rw->writers_waiting == 1) {
-        sem_wait(&rw->no_writer); // 새로운 독자가 접근하지 못하게 함
-    }
+    rw->waiting_writers++;
     sem_post(&rw->lock);
-    sem_wait(&rw->writelock); // 쓰기 잠금 획득
+
+    sem_wait(&rw->writelock);
+
+    sem_wait(&rw->lock);
+    rw->waiting_writers--;
+    sem_post(&rw->lock);
 }
 
 void rwlock_release_writelock(rwlock_t *rw) {
     sem_post(&rw->writelock);
-    sem_wait(&rw->lock);
-    rw->writers_waiting--; // 대기 중인 작가 수 감소
-    if (rw->writers_waiting == 0) {
-        sem_post(&rw->no_writer); // 더 이상 대기 중인 작가가 없으면 새로운 독자 허용
-    }
-    sem_post(&rw->lock);
 }
 
 //

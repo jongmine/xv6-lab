@@ -8,10 +8,10 @@
 //
 
 typedef struct __rwlock_t {
-    sem_t lock;           // binary semaphore for basic lock
-    sem_t writelock;      // to allow ONE writer/MANY readers
-    int readers;          // number of readers in the critical section
-    int waiting_writers;  // number of writers waiting for the lock
+    sem_t lock;           // 기본 잠금을 위한 binary semaphore
+    sem_t writelock;      // 하나의 writer 또는 다수의 reader를 허용하기 위한 semaphore
+    int readers;          // critical section 내의 reader 수
+    int waiting_writers;  // lock을 기다리는 writer 수
 } rwlock_t;
 
 void rwlock_init(rwlock_t *rw) {
@@ -24,9 +24,9 @@ void rwlock_init(rwlock_t *rw) {
 void rwlock_acquire_readlock(rwlock_t *rw) {
     sem_wait(&rw->lock);
     while (rw->waiting_writers > 0) {
-        // If there are writers waiting, release the lock and wait
+        //  writer가 기다리고 있는 경우, lock을 해제하고 대기
         sem_post(&rw->lock);
-        usleep(100);  // sleep for a short while to avoid busy waiting
+        usleep(100);  // busy waiting을 피하기 위해 sleep
         sem_wait(&rw->lock);
     }
     rw->readers++;

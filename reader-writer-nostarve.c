@@ -8,60 +8,49 @@
 //
 
 typedef struct __rwlock_t {
-    sem_t lock;        // binary semaphore (basic lock)
-    sem_t writelock;   // allows ONE writer/MANY readers
-    sem_t no_writer;   // prevents new readers when a writer is waiting
-    int readers;       // number of readers in critical section
-    int writers_waiting; // number of writers waiting
+    sem_t * lock;         // binary semaphore (basic lock)
+    sem_t * writelock;    // used to allow ONE writer or MANY readers
+    sem_t * readlock;     // used to block readers if there is a waiting writer
+    int     readers;      // count of readers reading in critical section
 } rwlock_t;
 
+char * lockString      = "/lock";
+char * writelockString = "/writelock";
+char * readlockString  = "/readlock";
 
 void rwlock_init(rwlock_t *rw) {
-    rw->readers = 0;
-    rw->writers_waiting = 0;
-    sem_init(&rw->lock, 0, 1);
-    sem_init(&rw->writelock, 0, 1);
-    sem_init(&rw->no_writer, 0, 1);
+    rw->readers   = 0;
+    rw->lock      = sem_open(lockString, 1);
+    rw->writelock = sem_open(writelockString, 1);
+    rw->readlock  = sem_open(readlockString, 1);
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
-    sem_wait(&rw->no_writer); // prevent new readers if writer is waiting
-    sem_wait(&rw->lock);
+    sem_wait(rw->readlock);
+    sem_post(rw->readlock);
+    sem_wait(rw->lock);
     rw->readers++;
-    if (rw->readers == 1) {
-        sem_wait(&rw->writelock); // first reader locks the writer out
-    }
-    sem_post(&rw->lock);
-    sem_post(&rw->no_writer); // allow new readers if no writer is waiting
+    if (rw->readers == 1)
+        Sem_wait(rw->writelock);    // first reader acquires writelock
+    sem_post(rw->lock);
 }
 
 void rwlock_release_readlock(rwlock_t *rw) {
-    sem_wait(&rw->lock);
+    sem_wait(rw->lock);
     rw->readers--;
-    if (rw->readers == 0) {
-        sem_post(&rw->writelock); // last reader lets the writer in
-    }
-    sem_post(&rw->lock);
+    if (rw->readers == 0)
+        sem_post(rw->writelock);    // last reader releases writelock
+    sem_post(rw->lock);
 }
 
 void rwlock_acquire_writelock(rwlock_t *rw) {
-    sem_wait(&rw->lock);
-    rw->writers_waiting++; // indicate a writer is waiting
-    if (rw->writers_waiting == 1) {
-        sem_wait(&rw->no_writer); // block new readers
-    }
-    sem_post(&rw->lock);
-    sem_wait(&rw->writelock); // writer lock
+    sem_wait(rw->readlock);         // block other readers
+    sem_wait(rw->writelock);
 }
 
 void rwlock_release_writelock(rwlock_t *rw) {
-    sem_post(&rw->writelock);
-    sem_wait(&rw->lock);
-    rw->writers_waiting--; // writer is done waiting
-    if (rw->writers_waiting == 0) {
-        sem_post(&rw->no_writer); // allow new readers
-    }
-    sem_post(&rw->lock);
+    sem_post(rw->writelock);
+    sem_post(rw->readlock);
 }
 
 //
